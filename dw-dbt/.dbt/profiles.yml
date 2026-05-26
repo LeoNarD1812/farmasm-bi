@@ -1,0 +1,12 @@
+farmasm_bi:
+  target: dev
+  outputs:
+    dev:
+      type: postgres
+      host: host.docker.internal
+      user: postgres
+      password: postgres
+      port: 15432
+      dbname: farmacia_dw
+      schema: marts
+      threads: 4

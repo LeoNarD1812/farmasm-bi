@@ -1,0 +1,17 @@
+services:
+  oltp-mysql:
+    image: mysql:8.0
+    container_name: oltp-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: farmadb
+    ports:
+      - "13306:3306"
+    volumes:
+      - ./mysql/init:/docker-entrypoint-initdb.d
+      - mysql_oltp_data:/var/lib/mysql
+    command: --log-bin=mysql-bin --binlog-format=ROW --server-id=1 --gtid-mode=ON --enforce-gtid-consistency=ON
+
+volumes:
+  mysql_oltp_data:

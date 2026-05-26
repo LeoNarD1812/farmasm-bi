@@ -1,0 +1,17 @@
+services:
+  dw-postgres:
+    image: postgres:16
+    container_name: farmacia-dw-pg
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: farmacia_dw
+    ports:
+      - "15432:5432"
+    volumes:
+      - ./postgres/init:/docker-entrypoint-initdb.d
+      - pg_dw_data:/var/lib/postgresql/data
+
+volumes:
+  pg_dw_data:

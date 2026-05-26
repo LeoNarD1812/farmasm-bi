@@ -1,0 +1,14 @@
+version: 2
+models:
+  - name: fact_ventas
+    columns:
+      - name: fact_venta_key
+        tests:
+          - unique
+          - not_null
+  - name: dim_producto
+    columns:
+      - name: producto_key
+        tests:
+          - unique
+          - not_null

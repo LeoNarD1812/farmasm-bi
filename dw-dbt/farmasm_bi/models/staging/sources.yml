@@ -1,0 +1,9 @@
+version: 2
+sources:
+  - name: raw
+    schema: raw
+    tables:
+      - name: clientes
+      - name: productos
+      - name: ventas_cabecera
+      - name: ventas_detalle

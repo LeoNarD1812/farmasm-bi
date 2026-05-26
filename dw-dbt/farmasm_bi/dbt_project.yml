@@ -1,0 +1,17 @@
+name: 'farmasm_bi'
+version: '1.0.0'
+config-version: 2
+
+profile: 'farmasm_bi'
+
+model-paths: ["models"]
+macro-paths: ["macros"]
+
+models:
+  farmasm_bi:
+    staging:
+      +materialized: view
+      +schema: staging
+    marts:
+      +materialized: table
+      +schema: marts

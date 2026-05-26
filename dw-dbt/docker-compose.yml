@@ -1,0 +1,19 @@
+name: farmasm-bi-dbt
+
+services:
+  dbt:
+    build: .
+    container_name: farmasm-dw-dbt
+    volumes:
+      - .:/usr/app
+      - ./.dbt:/root/.dbt
+    working_dir: /usr/app
+    command: sleep infinity
+    networks:
+      - farmasm-bi-net
+    tty: true
+    stdin_open: true
+
+networks:
+  farmasm-bi-net:
+    name: farmasm-bi-net
