@@ -26,3 +26,18 @@ INNER JOIN ventas_cabecera vc ON vd.id_venta = vc.id_venta
 INNER JOIN dim_cliente dc ON vc.id_cliente = dc.cliente_id
 INNER JOIN dim_vendedor dv ON vc.id_vendedor = dv.vendedor_id
 INNER JOIN dim_producto dp ON vd.id_producto = dp.producto_id;
+
+CREATE OR REPLACE VIEW vw_g_inventario AS
+SELECT 
+    i.id_inventario,
+    CAST(DATE_FORMAT(i.fecha_corte, '%Y%m%d') AS UNSIGNED) AS fecha_key,
+    dp.producto_key,
+    i.stock_actual,
+    i.faltantes,
+    i.sobrantes,
+    CASE 
+        WHEN i.stock_actual = 0 THEN 0 
+        ELSE (i.faltantes / i.stock_actual) 
+    END AS pct_quiebre
+FROM inventario i
+INNER JOIN dim_producto dp ON i.id_producto = dp.producto_id;

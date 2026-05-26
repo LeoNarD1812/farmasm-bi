@@ -1,9 +1,15 @@
 version: 2
+
 sources:
   - name: raw
     schema: raw
     tables:
       - name: clientes
+      - name: vendedores
       - name: productos
+      - name: categorias
+      - name: marcas
+      - name: proveedores
       - name: ventas_cabecera
       - name: ventas_detalle
+      - name: inventario

@@ -29,8 +29,9 @@ for row in ventas_cab:
 
 os.makedirs('oltp-mysql/mysql/init', exist_ok=True)
 
-# Plantilla de creación de base de datos y tablas
-sql_estructura = """CREATE DATABASE IF NOT EXISTS farmadb;
+# Plantilla de creación de base de datos y tablas con desactivación de llaves foráneas al inicio
+sql_estructura = """SET FOREIGN_KEY_CHECKS = 0;
+CREATE DATABASE IF NOT EXISTS farmadb;
 USE farmadb;
 
 CREATE TABLE categorias (id_categoria INT PRIMARY KEY, nombre_categoria VARCHAR(100) NOT NULL);
@@ -38,6 +39,16 @@ CREATE TABLE marcas (id_marca INT PRIMARY KEY, nombre_marca VARCHAR(100) NOT NUL
 CREATE TABLE proveedores (id_proveedor INT PRIMARY KEY, nombre_proveedor VARCHAR(100) NOT NULL);
 CREATE TABLE vendedores (id_vendedor INT PRIMARY KEY, nombre_vendedor VARCHAR(100) NOT NULL);
 CREATE TABLE clientes (id_cliente INT PRIMARY KEY, nombre_cliente VARCHAR(150) NOT NULL, ruc_dni VARCHAR(20) NOT NULL);
+
+CREATE TABLE inventario (
+    id_inventario INT PRIMARY KEY AUTO_INCREMENT,
+    id_producto INT NOT NULL,
+    fecha_corte DATE NOT NULL,
+    stock_actual INT NOT NULL,
+    faltantes INT DEFAULT 0,
+    sobrantes INT DEFAULT 0,
+    FOREIGN KEY (id_producto) REFERENCES productos(id_producto)
+);
 
 CREATE TABLE productos (
     id_producto INT PRIMARY KEY,
@@ -95,10 +106,22 @@ try:
 
         prods = []
         for r in inventario:
-            # Por si hay fechas vacías en el CSV
             fecha = r['Fecha_Vencimiento'] if r['Fecha_Vencimiento'].strip() else '2099-12-31'
             prods.append(f"({r['ID_Producto']}, '{limpiar_texto(r['Producto'])}', {cats[r['Categoria']]}, {marcas[r['Marca']]}, {r['Stock_Actual']}, '{fecha}', {provs[r['Proveedor']]}, {r['Costo_Unitario']})")
         f.write("INSERT INTO productos VALUES\n" + ",\n".join(prods) + ";\n")
+
+        inv_data = []
+        for r in inventario:
+            id_producto = r['ID_Producto']
+            stock = r['Stock_Actual'] if r['Stock_Actual'] else 0
+            falt = r['faltantes'] if 'faltantes' in r else 0
+            sobr = r['sobrantes'] if 'sobrantes' in r else 0
+            fec = r['Fecha_Corte'] if 'Fecha_Corte' in r else '2026-05-26'
+            
+            inv_data.append(f"({id_producto}, '{fec}', {stock}, {falt}, {sobr})")
+        
+        f.write("INSERT INTO inventario (id_producto, fecha_corte, stock_actual, faltantes, sobrantes) VALUES\n")
+        f.write(",\n".join(inv_data) + ";\n")
 
         cabs = []
         venta_map = {}
@@ -108,10 +131,21 @@ try:
             cabs.append(f"({id_venta}, '{limpiar_texto(r['Comprobante'])}', '{limpiar_texto(r['Serie'])}', {r['Numero']}, '{r['Fecha_Emision']}', {vends[r['Vendedor']]}, {clientes[(r['Cliente'], r['RUC'])]}, '{limpiar_texto(r['Metodo_Pago'])}', {r['Total_Gravada']}, {r['Total_IGV']}, {r['Total_Venta']})")
         f.write("INSERT INTO ventas_cabecera VALUES\n" + ",\n".join(cabs) + ";\n")
 
+        # ... (código anterior)
         dets = []
         for i, r in enumerate(ventas_det):
             dets.append(f"({i+1}, {venta_map[r['Comprobante_Ref']]}, {r['ID_Producto']}, {r['Cantidad']}, {r['Precio_Unitario']}, {r['Subtotal']})")
         f.write("INSERT INTO ventas_detalle VALUES\n" + ",\n".join(dets) + ";\n")
+
+        # --- NUEVO CÓDIGO: AGREGAR FECHA DE MODIFICACIÓN A TODAS LAS TABLAS ---
+        f.write("\n-- Agregando campo de auditoria para migracion a Postgres\n")
+        tablas = ['categorias', 'marcas', 'proveedores', 'vendedores', 'clientes', 'productos', 'inventario', 'ventas_cabecera', 'ventas_detalle']
+        for tabla in tablas:
+            f.write(f"ALTER TABLE {tabla} ADD COLUMN fecha_modificacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP;\n")
+        # ---------------------------------------------------------------------
+
+        # Reactivamos la verificación de llaves foráneas al final
+        f.write("\nSET FOREIGN_KEY_CHECKS = 1;\n")
 
     print("¡Archivo SQL generado con éxito y a prueba de errores!")
 except Exception as e:
